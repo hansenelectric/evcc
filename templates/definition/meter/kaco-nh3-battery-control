@@ -1,0 +1,107 @@
+template: kaco-nh3-battery-control
+
+products:
+  - brand: KACO
+    description:
+      generic: blueplanet NH3 Hybrid
+
+capabilities: ["battery-control"]
+
+params:
+  - name: usage
+    choice: ["battery"]
+
+  - name: modbus
+    choice: ["rs485"]
+
+  - name: maxchargepower
+    default: 10000
+
+  - name: maxdischargepower
+    default: 10000
+
+  - preset: battery-params
+
+render: |
+  type: custom
+
+  power:
+    source: sunspec
+    {{- include "modbus" . | indent 2 }}
+    value: 802:W
+
+  soc:
+    source: sunspec
+    {{- include "modbus" . | indent 2 }}
+    value: 802:SoC
+
+  limitsoc:
+    source: sunspec
+    {{- include "modbus" . | indent 2 }}
+    value: 802:SoCRsvMin
+
+  batterymode:
+    source: switch
+    switch:
+
+    - case: 1 # normal
+      set:
+        source: const
+        value: 1
+        set:
+          source: modbus
+          register:
+            address: 41152
+            type: writesingle
+
+    - case: 2 # hold
+      set:
+        source: const
+        value: 1
+        set:
+          source: modbus
+          register:
+            address: 41152
+            type: writesingle
+
+    - case: 3 # charge
+      set:
+        source: sequence
+        set:
+        - source: const
+          value: 2
+          set:
+            source: modbus
+            register:
+              address: 41152
+              type: writesingle
+
+        - source: const
+          value: {{ .maxchargepower }}
+          set:
+            source: modbus
+            register:
+              address: 41153
+              type: writesingle
+
+    - case: 4 # discharge
+      set:
+        source: sequence
+        set:
+        - source: const
+          value: 3
+          set:
+            source: modbus
+            register:
+              address: 41152
+              type: writesingle
+
+        - source: const
+          value: {{ .maxdischargepower }}
+          set:
+            source: modbus
+            register:
+              address: 41153
+              type: writesingle
+
+  {{- include "battery-params" . }}
