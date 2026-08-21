@@ -131,7 +131,7 @@ render: |
   {{- if .useshelly }}
   power:
     source: http
-    uri: http://{{ .shellyhost }}/rpc/Switch.GetStatus?id=0
-    jq: .apower | floor
+    uri: http://{{ .shellyhost }}/rpc/EM.GetStatus?id=0
+    jq: .act_power | floor
     timeout: 5s
   {{- end }}
